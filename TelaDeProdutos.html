@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loja de Produtos</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+
+    header {
+      background-color: #2d6cdf;
+      color: white;
+      text-align: center;
+      padding: 20px 0;
+      font-size: 1.5rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .search-bar {
+      text-align: center;
+      padding: 15px;
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .search-bar input {
+      width: 80%;
+      max-width: 400px;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .card-content {
+      padding: 15px;
+      text-align: center;
+    }
+
+    .card-content h3 {
+      margin: 10px 0;
+      color: #333;
+    }
+
+    .card-content p {
+      color: #777;
+      margin-bottom: 15px;
+    }
+
+    .price {
+      font-size: 1.2rem;
+      color: #2d6cdf;
+      font-weight: bold;
+    }
+
+    .btn {
+      background-color: #2d6cdf;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #1e4fa3;
+    }
+
+    .btn-remove {
+      background-color: #e74c3c;
+    }
+
+    .btn-remove:hover {
+      background-color: #c0392b;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 20;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: white;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+    }
+
+    /* Carrinho lateral */
+    .cart {
+      position: fixed;
+      top: 0;
+      right: -350px;
+      width: 350px;
+      height: 100%;
+      background-color: white;
+      box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+      transition: right 0.3s ease;
+      z-index: 30;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart.open {
+      right: 0;
+    }
+
+    .cart h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .cart-item {
+      border-bottom: 1px solid #ccc;
+      padding: 10px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cart-item p {
+      margin: 0;
+    }
+
+    .cart-total {
+      font-weight: bold;
+      text-align: center;
+      margin-top: 15px;
+      font-size: 1.1rem;
+    }
+
+    .cart-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #2d6cdf;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: background-color 0.3s ease;
+      z-index: 40;
+    }
+
+    .cart-btn:hover {
+      background-color: #1e4fa3;
+    }
+
+    .btn-comprar {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #27ae60;
+    }
+
+    .btn-comprar:hover {
+      background-color: #1e8449;
+    }
+  </style>
+</head>
+<body>
+  <header>🛍️ Minha Loja</header>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Buscar produtos..." onkeyup="filtrarProdutos()">
+  </div>
+
+  <div class="container" id="productContainer">
+    <div class="card" data-nome="Produto 1" data-preco="6000.00" data-descricao="Playstation 5 incrível com alta qualidade" data-img="https://m.media-amazon.com/images/I/71yPeAoEWoL._AC_SX342_SY445_QL70_ML2_.jpg">
+      <img src="https://m.media-amazon.com/images/I/71yPeAoEWoL._AC_SX342_SY445_QL70_ML2_.jpg" alt="Playstation de última geração">
+      <div class="card-content">
+        <h3>Produto 1</h3>
+        <p class="price">R$ 6000,00</p>
+        <button class="btn" onclick="toggleCarrinho(event, this)">Adicionar ao Carrinho</button>
+      </div>
+    </div>
+
+    <div class="card" data-nome="NoteBook gamer Acer Nitro" data-preco="9999.99" data-descricao="NoteBook com excelente desempenho" data-img="https://m.media-amazon.com/images/I/51e+8Wdax1L._AC_SX679_.jpg">
+      <img src="https://m.media-amazon.com/images/I/51e+8Wdax1L._AC_SX679_.jpg" alt="NoteBook gamer">
+      <div class="card-content">
+        <h3>NoteBook gamer Acer Nitro</h3>
+        <p class="price">R$ 9999,99</p>
+        <button class="btn" onclick="toggleCarrinho(event, this)">Adicionar ao Carrinho</button>
+      </div>
+    </div>
+
+    <div class="card" data-nome="Xbox Series X" data-preco="3000.00" data-descricao="Xbox Series X confortável e durável" data-img="https://m.media-amazon.com/images/I/516pVDAQMnL._AC_SX342_SY445_QL70_ML2_.jpg">
+      <img src="https://m.media-amazon.com/images/I/516pVDAQMnL._AC_SX342_SY445_QL70_ML2_.jpg" alt="Xbox de última geração">
+      <div class="card-content">
+        <h3>Xbox Series X</h3>
+        <p class="price">R$ 3000,00</p>
+        <button class="btn" onclick="toggleCarrinho(event, this)">Adicionar ao Carrinho</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="productModal">
+    <div class="modal-content">
+      <span class="close" onclick="fecharModal()">&times;</span>
+      <img id="modalImg" src="" style="width:100%; border-radius:10px;">
+      <h2 id="modalNome"></h2>
+      <p id="modalDescricao"></p>
+      <p class="price" id="modalPreco"></p>
+      <button class="btn" id="modalBtn" onclick="adicionarCarrinhoDireto()">Adicionar ao Carrinho</button>
+    </div>
+  </div>
+
+  <!-- Carrinho lateral -->
+  <div class="cart" id="cart">
+    <h2>🛒 Carrinho</h2>
+    <div id="cartItems"></div>
+    <p class="cart-total" id="cartTotal">Total: R$ 0,00</p>
+    <button class="btn btn-comprar" onclick="finalizarCompra()">Finalizar Compra</button>
+  </div>
+
+  <button class="cart-btn" onclick="alternarCarrinho()">🛒</button>
+
+  <script>
+    const modal = document.getElementById('productModal');
+    const cart = document.getElementById('cart');
+    const cartItems = document.getElementById('cartItems');
+    const cartTotal = document.getElementById('cartTotal');
+    let total = 0;
+    const carrinho = {};
+
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', e => {
+        if (e.target.tagName !== 'BUTTON') abrirModal(card);
+      });
+    });
+
+    function abrirModal(card) {
+      modal.style.display = 'flex';
+      modal.dataset.nome = card.dataset.nome;
+      document.getElementById('modalImg').src = card.dataset.img;
+      document.getElementById('modalNome').innerText = card.dataset.nome;
+      document.getElementById('modalDescricao').innerText = card.dataset.descricao;
+      document.getElementById('modalPreco').innerText = 'R$ ' + card.dataset.preco;
+      const btn = document.getElementById('modalBtn');
+      if (carrinho[card.dataset.nome]) {
+        btn.textContent = 'Remover do Carrinho';
+        btn.classList.add('btn-remove');
+      } else {
+        btn.textContent = 'Adicionar ao Carrinho';
+        btn.classList.remove('btn-remove');
+      }
+    }
+
+    function fecharModal() {
+      modal.style.display = 'none';
+    }
+
+    function toggleCarrinho(event, btn) {
+      event.stopPropagation();
+      const card = btn.closest('.card');
+      const nome = card.dataset.nome;
+      const preco = parseFloat(card.dataset.preco);
+
+      if (carrinho[nome]) {
+        removerProduto(nome, btn);
+      } else {
+        adicionarProduto(nome, preco, btn);
+      }
+    }
+
+    function adicionarCarrinhoDireto() {
+      const nome = modal.dataset.nome;
+      const card = [...document.querySelectorAll('.card')].find(c => c.dataset.nome === nome);
+      const preco = parseFloat(card.dataset.preco);
+      if (carrinho[nome]) {
+        removerProduto(nome, card.querySelector('.btn'));
+      } else {
+        adicionarProduto(nome, preco, card.querySelector('.btn'));
+      }
+      fecharModal();
+    }
+
+    function adicionarProduto(nome, preco, btn) {
+      carrinho[nome] = preco;
+      const item = document.createElement('div');
+      item.classList.add('cart-item');
+      item.id = 'item-' + nome;
+      item.innerHTML = `<p>${nome}</p><p>R$ ${preco.toFixed(2)}</p>
+        <button class="btn btn-remove" onclick="removerProduto('${nome}')">✖</button>`;
+      cartItems.appendChild(item);
+      total += preco;
+      atualizarTotal();
+      btn.textContent = 'Remover do Carrinho';
+      btn.classList.add('btn-remove');
+    }
+
+    function removerProduto(nome, btnRef) {
+      const item = document.getElementById('item-' + nome);
+      if (item) {
+        item.remove();
+        total -= carrinho[nome];
+        delete carrinho[nome];
+        atualizarTotal();
+      }
+      const cardBtn = [...document.querySelectorAll('.card')].find(c => c.dataset.nome === nome)?.querySelector('.btn');
+      if (cardBtn) {
+        cardBtn.textContent = 'Adicionar ao Carrinho';
+        cardBtn.classList.remove('btn-remove');
+      }
+      const modalBtn = document.getElementById('modalBtn');
+      if (modal.dataset.nome === nome) {
+        modalBtn.textContent = 'Adicionar ao Carrinho';
+        modalBtn.classList.remove('btn-remove');
+      }
+    }
+
+    function atualizarTotal() {
+      cartTotal.innerText = 'Total: R$ ' + total.toFixed(2);
+    }
+
+    function alternarCarrinho() {
+      cart.classList.toggle('open');
+    }
+
+    function filtrarProdutos() {
+      const filtro = document.getElementById('searchInput').value.toLowerCase();
+      document.querySelectorAll('.card').forEach(card => {
+        const nome = card.dataset.nome.toLowerCase();
+        card.style.display = nome.includes(filtro) ? 'block' : 'none';
+      });
+    }
+
+    function finalizarCompra() {
+      if (Object.keys(carrinho).length === 0) {
+        alert('Seu carrinho está vazio!');
+      } else {
+        alert('Compra finalizada com sucesso! Obrigado 😄');
+        cartItems.innerHTML = '';
+        total = 0;
+        atualizarTotal();
+        for (let nome in carrinho) delete carrinho[nome];
+        document.querySelectorAll('.btn-remove').forEach(b => {
+          b.textContent = 'Adicionar ao Carrinho';
+          b.classList.remove('btn-remove');
+        });
+      }
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) fecharModal();
+    };
+  </script>
+</body>
+</html>
